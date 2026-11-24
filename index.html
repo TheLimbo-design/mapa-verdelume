@@ -1,0 +1,123 @@
+<!DOCTYPE html
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Meu mapa</title>
+<style>
+
+body{margin:0;background:#0d1b2a}
+#visor{position:fixed;inset:0;overflow:auto}
+#voltar{position:fixed;top:10px;left:10px;z-index:5}#mapa{position:relative;width:100%;transition:transform .6s,opacity .6s}
+#mapa.trocando{transform:scale(1.6);opacity:0}
+#mapa img{width:100%;display:block}
+.ponto{position:absolute;transform:translate(-50%,-50%);width:6px;height:6px;padding:0;box-sizing:border-box;border-radius:50%;background:#1e6fff;border:1px solid black}
+dialog{max-width:80%}
+#mapa.nevoa::after{content:"";position:absolute;inset:0;pointer-events:none;z-index:1;background:radial-gradient(circle at 0% 0%,rgba(238,244,252,.95) 0,transparent 38%),radial-gradient(circle at 100% 0%,rgba(238,244,252,.95) 0,transparent 38%),radial-gradient(circle at 0% 100%,rgba(238,244,252,.95) 0,transparent 38%),radial-gradient(circle at 100% 100%,rgba(238,244,252,.95) 0,transparent 38%),radial-gradient(ellipse at center,transparent 55%,rgba(238,244,252,.85) 100%)}
+.ponto{z-index:2}</style>
+</head>
+<body>
+<button id="voltar" hidden>Voltar ao continente</button>
+<div id="visor"><div id="mapa"><img id="imagem" src="mapa.png" alt="Mapa"></div></div>
+
+<dialog id="janela">
+  <h2 id="nome"></h2>
+  <p id="texto"></p>
+  <button id="entrar" hidden>Explorar</button>
+  <button id="fechar">Fechar</button>
+</dialog>
+
+<script>
+var mapas = {
+  continente: {
+    imagem: "mapa.png",
+    lugares: [
+      {nome:"Frosteim", x:49.8, y:25.2, texto:"Terras geladas do norte."},
+      {nome:"Dun'khar", x:71.4, y:24.8, texto:"Reino da ilha nordeste."},
+      {nome:"Umbraeth", x:74.1, y:29.1, texto:"Terras sombrias do leste."},
+{nome:"Frosteim", x:49.8, y:25.2, texto:"Terras geladas do norte.", entrar:"reino"},      {nome:"Eldravia", x:32.4, y:42.5, texto:"Terras ao redor do grande lago."},
+      {nome:"Crimsonveil", x:46.3, y:40.4, texto:"Reino coberto por um véu carmesim."},
+      {nome:"Nepharion", x:61.0, y:50.5, texto:"O grande reino central."},
+      {nome:"Eldrath", x:79.2, y:50.1, texto:"Reino das montanhas do leste."},
+      {nome:"Elenoir", x:29.7, y:54.2, texto:"Terras de floresta escura."},
+      {nome:"Asterhal", x:13.9, y:59.6, texto:"Reino verde da costa oeste."},
+      {nome:"Norhaven", x:31.7, y:58.8, texto:"Porto seguro do norte."},
+      {nome:"Elderlen", x:24.7, y:65.8, texto:"Reino das terras antigas."},
+      {nome:"Cindor", x:15.8, y:69.9, texto:"Reino da costa sudoeste."},
+      {nome:"Darv", x:36.7, y:73.4, texto:"Terras do sudeste do continente."},
+      {nome:"Xyrus", x:24.7, y:79.6, texto:"Reino do extremo sul."},
+      {nome:"Forest of Death", x:61.8, y:64.1, texto:"Floresta que poucos atravessam."},
+      {nome:"Stormguard", x:74.5, y:63.7, texto:"Reino guardado por tempestades."},
+      {nome:"Dun'Kar", x:50, y:45, texto:"Um vastor deserto escaldante"}
+    ]
+  },
+  reino: {
+    imagem: "reino.png",
+    lugares: [
+      {nome:"Capital", x:50, y:50, texto:"A cidade principal do reino."},
+      {nome:"Castelo", x:50, y:30, texto:"Residência do rei."},
+      {nome:"Porto", x:80, y:70, texto:"Navios chegam de longe."}
+    ]
+  }
+};
+
+var mapa = document.getElementById("mapa");
+var imagem = document.getElementById("imagem");
+var janela = document.getElementById("janela");
+var botaoEntrar = document.getElementById("entrar");
+var botaoVoltar = document.getElementById("voltar");
+
+function mostrar(nomeDoMapa){
+  var dados = mapas[nomeDoMapa];
+  imagem.src = dados.imagem;
+  mapa.querySelectorAll(".ponto").forEach(function(p){ p.remove(); });
+  dados.lugares.forEach(function(lugar){
+    var botao = document.createElement("button");
+    botao.className = "ponto";
+    botao.style.left = lugar.x + "%";
+    botao.style.top = lugar.y + "%";
+    botao.onclick = function(){ abrirJanela(lugar); };
+    mapa.appendChild(botao);
+  });
+  botaoVoltar.hidden = (nomeDoMapa === "continente");mapa.classList.toggle("nevoa", nomeDoMapa !== "continente");
+}
+
+function ir(nomeDoMapa){
+  mapa.classList.add("trocando");
+  setTimeout(function(){
+    mostrar(nomeDoMapa);
+    mapa.classList.remove("trocando");
+  }, 600);
+}
+
+function abrirJanela(lugar){
+  document.getElementById("nome").textContent = lugar.nome;
+  document.getElementById("texto").textContent = lugar.texto;
+  botaoEntrar.hidden = !lugar.entrar;
+  botaoEntrar.onclick = function(){
+    janela.close();
+    ir(lugar.entrar);
+  };
+  janela.showModal();
+}
+
+botaoVoltar.onclick = function(){ ir("continente"); };
+document.getElementById("fechar").onclick = function(){ janela.close(); };
+
+function ajustar(){
+  var w = imagem.naturalWidth, h = imagem.naturalHeight;
+  if (!w) return;
+  var e = Math.max(window.innerWidth / w, window.innerHeight / h);
+  mapa.style.width = (w * e) + "px";
+  mapa.style.height = (h * e) + "px";
+  var v = document.getElementById("visor");
+  v.scrollLeft = (mapa.offsetWidth - v.clientWidth) / 2;
+  v.scrollTop = (mapa.offsetHeight - v.clientHeight) / 2;
+}
+imagem.onload = ajustar;
+window.onresize = ajustar;
+mostrar("continente");
+if (imagem.complete) ajustar();
+</script>
+</body>
+</html>
